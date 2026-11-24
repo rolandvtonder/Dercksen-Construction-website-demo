@@ -11,6 +11,16 @@ import {jumpTo} from './scroll';
 
 export type Phase = 'idle' | 'cover' | 'reveal';
 
+/**
+ * The folder the site is served from: '' at a domain root, or e.g.
+ * '/Dercksen-Construction-website-demo' on GitHub Pages (set by BASE_PATH
+ * at build time). Paths inside the app never include it; it is added when a
+ * path becomes a real URL and stripped when a URL is read back.
+ */
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+export const withBase = (href: string) => (href.startsWith('/') && !href.startsWith('//') ? BASE + href : href);
+const stripBase = (p: string) => (BASE && p.startsWith(BASE) ? p.slice(BASE.length) || '/' : p);
+
 let path = '/';
 let phase: Phase = 'idle';
 let busy = false;
@@ -32,7 +42,7 @@ export function normalise(p: string) {
 
 /** Sets the path before the first render (server: the page being prerendered; client: the URL). */
 export function setPath(p: string) {
-  path = normalise(p);
+  path = normalise(stripBase(p));
 }
 
 export const usePath = () =>
@@ -67,20 +77,20 @@ function settle(hash: string) {
 }
 
 export function navigate(href: string) {
-  const url = new URL(href, window.location.href);
+  const url = new URL(href, window.location.origin);
   const next = normalise(url.pathname);
   const hash = url.hash;
 
   // Same page: just glide to the section (or the top).
   if (next === path) {
     jumpTo(hash ? document.querySelector<HTMLElement>(hash) ?? 0 : 0, false);
-    if (hash) history.replaceState(null, '', next + hash);
+    if (hash) history.replaceState(null, '', withBase(next) + hash);
     return;
   }
   if (busy) return;
 
   const commit = () => {
-    history.pushState(null, '', next + hash);
+    history.pushState(null, '', withBase(next) + hash);
     path = next;
     emit();
     settle(hash);
@@ -128,7 +138,7 @@ export function curtainCovered() {
 /** Back/forward buttons. */
 export function listenHistory() {
   const onPop = () => {
-    path = normalise(window.location.pathname);
+    path = normalise(stripBase(window.location.pathname));
     emit();
     settle(window.location.hash);
   };

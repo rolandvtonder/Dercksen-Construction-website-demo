@@ -1,5 +1,5 @@
 import type {AnchorHTMLAttributes, Ref} from 'react';
-import {navigate} from '../lib/router';
+import {navigate, withBase} from '../lib/router';
 
 /**
  * An ordinary <a> for crawlers and new-tab clicks; a plain left click is
@@ -14,7 +14,7 @@ export function Link({
   return (
     <a
       ref={ref}
-      href={href}
+      href={withBase(href)}
       onClick={(e) => {
         onClick?.(e);
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;

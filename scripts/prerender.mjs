@@ -12,7 +12,15 @@ const dist = resolve('dist');
 const ssr = resolve('dist-ssr/entry-server.js');
 const {render, routes, notFound, pageSchema, site} = await import(pathToFileURL(ssr).href);
 
-const template = readFileSync(resolve(dist, 'index.html'), 'utf8');
+// The folder the site is served from ('/' or '/Dercksen-Construction-website-demo/'),
+// and whether this is the public demo copy, which search engines should skip
+// so it never competes with the real site later.
+const base = (process.env.BASE_PATH || '/').replace(/\/?$/, '/');
+const demo = Boolean(process.env.DEMO);
+
+const template = readFileSync(resolve(dist, 'index.html'), 'utf8')
+  // Root-relative links to files in public/ must sit inside the base folder too.
+  .replace(/(href|imagesrcset)="\/(?!\/)(?=favicon|apple-touch-icon|site\.webmanifest|media\/)/g, `$1="${base}`);
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 const today = new Date().toISOString().slice(0, 10);
 
@@ -21,8 +29,8 @@ const WIDE = new Set(['hero-foundation', 'site-crew', 'site-aerial']);
 const preload = (name) => {
   if (!name) return '';
   const widths = WIDE.has(name) ? [800, 1600, 2400] : [800, 1600];
-  const set = widths.map((w) => `/media/${name}-${w}.webp ${w}w`).join(', ');
-  return `<link rel="preload" as="image" href="/media/${name}-1600.webp" imagesrcset="${set}" imagesizes="100vw" fetchpriority="high" />`;
+  const set = widths.map((w) => `${base}media/${name}-${w}.webp ${w}w`).join(', ');
+  return `<link rel="preload" as="image" href="${base}media/${name}-1600.webp" imagesrcset="${set}" imagesizes="100vw" fetchpriority="high" />`;
 };
 
 const images = {};
@@ -36,8 +44,8 @@ function page(route, path) {
   const body = render(path);
 
   // Every distinct photo on the page (largest export), for the image sitemap.
-  images[route.path] = [...new Set([...body.matchAll(/src="(\/media\/[^"]+?)-(?:800|1600)\.webp"/g)].map((m) => m[1]))].map(
-    (base) => `${site.url}${base}-1600.webp`,
+  images[route.path] = [...new Set([...body.matchAll(/src="[^"]*?\/media\/([^"]+?)-(?:800|1600)\.webp"/g)].map((m) => m[1]))].map(
+    (name) => `${site.url}/media/${name}-1600.webp`,
   );
 
   let html = template
@@ -54,7 +62,8 @@ function page(route, path) {
     .replace(/<link rel="preload" as="image"[^>]*>/, preload(route.hero))
     .replace('<!--schema-->', json)
     .replace('<!--app-->', body);
-  if (route === notFound) html = html.replace('content="index, follow, max-image-preview:large"', 'content="noindex, follow"');
+  if (demo) html = html.replace('content="index, follow, max-image-preview:large"', 'content="noindex, nofollow"');
+  else if (route === notFound) html = html.replace('content="index, follow, max-image-preview:large"', 'content="noindex, follow"');
   return html;
 }
 

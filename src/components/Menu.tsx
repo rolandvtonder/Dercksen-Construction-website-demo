@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState, type CSSProperties} from 'react';
 import {contact, nav, socials} from '../content';
+import {withBase} from '../lib/router';
 
 /**
  * The menu: three slabs wipe in from the right one after another
@@ -79,7 +80,7 @@ export function Menu({open, path, onClose, onNavigate}: {open: boolean; path: st
             >
               <a
                 ref={i === 0 ? first : undefined}
-                href={item.href}
+                href={withBase(item.href)}
                 aria-current={item.href === path ? 'page' : undefined}
                 onMouseEnter={() => setHover(i)}
                 onFocus={() => setHover(i)}
@@ -111,7 +112,7 @@ export function Menu({open, path, onClose, onNavigate}: {open: boolean; path: st
             <p className="caps text-ink/55">Follow us</p>
             <div className="mt-2 flex gap-5">
               {socials.map((s) => (
-                <a key={s.label} href={s.href} className="caps text-ink/85 hover:text-oxide" target={s.href.startsWith('http') ? '_blank' : undefined} rel="noopener">
+                <a key={s.label} href={withBase(s.href)} className="caps text-ink/85 hover:text-oxide" target={s.href.startsWith('http') ? '_blank' : undefined} rel="noopener">
                   {s.label}
                 </a>
               ))}

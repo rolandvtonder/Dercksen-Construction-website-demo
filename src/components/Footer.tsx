@@ -1,5 +1,6 @@
 import {brand, contact, footer, nav, services, socials, towns} from '../content';
 import {useFitText} from '../hooks/useFitText';
+import {withBase} from '../lib/router';
 import {Link} from './Link';
 import {Logo} from './Logo';
 
@@ -52,7 +53,7 @@ export function Footer() {
           </address>
           <div className="mt-5 flex gap-5">
             {socials.map((s) => (
-              <a key={s.label} href={s.href} className="caps text-white/75 hover:text-oxide" target={s.href.startsWith('http') ? '_blank' : undefined} rel="noopener">
+              <a key={s.label} href={withBase(s.href)} className="caps text-white/75 hover:text-oxide" target={s.href.startsWith('http') ? '_blank' : undefined} rel="noopener">
                 {s.label}
               </a>
             ))}
